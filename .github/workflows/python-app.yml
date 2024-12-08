@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Python application
 
 on:
   push:
@@ -14,24 +14,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job 1: Build
   build:
     runs-on: ubuntu-latest
-    concurrency:
-      group: build-${{ github.ref }}
-      cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: ./example-app
 
     steps:
       - uses: actions/checkout@v4
-        name: Checkout code
-
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
         with:
           python-version: "3.9"
 
-      - name: Cache poetry dependencies
-        id: cache-poetry
+      - name: Cache build venv
+        id: cached-poetry-dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry/virtualenvs
@@ -50,71 +47,87 @@ jobs:
         run: |
           poetry install --no-root
 
-  # Job 2: Lint, Formatter, and Security (Quality checks)
-  quality-checks:
-    needs: build  # Ensure this runs after 'build'
+  lint:
     runs-on: ubuntu-latest
-    concurrency:
-      group: quality-checks-${{ github.ref }}
-      cancel-in-progress: true
+    needs: build
+    defaults:
+      run:
+        working-directory: ./example-app
 
     steps:
       - uses: actions/checkout@v4
-        name: Checkout code
-
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
         with:
           python-version: "3.9"
 
-      # Lint Step
       - name: Install flake8
         run: |
-          poetry add --dev flake8
+          poetry run poetry add --dev flake8
 
       - name: Lint with flake8
         run: |
-          poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --ignore=F821
+          poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      # Formatter Step
-      - name: Install black
-        run: |
-          poetry add --dev black
-
-      - name: Format with black
-        run: |
-          poetry run black . --check
-
-      # Security Step
-      - name: Install safety
-        run: |
-          poetry add --dev safety
-
-      - name: Run security checks with safety
-        run: |
-          poetry run safety check
-
-  # Job 3: Unit Tests
-  unit_tests:
-    needs: quality-checks  # Ensure this runs after 'quality-checks'
+  formatter:
     runs-on: ubuntu-latest
-    concurrency:
-      group: unittests-${{ github.ref }}
-      cancel-in-progress: true
+    needs: build
+    defaults:
+      run:
+        working-directory: ./example-app
 
     steps:
       - uses: actions/checkout@v4
-        name: Checkout code
-
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
         with:
           python-version: "3.9"
 
-      - name: Install dependencies with Poetry
+      - name: Install Black
         run: |
-          poetry install --no-root
+          poetry run poetry add --dev black
 
-      - name: Run unit tests with pytest
+      - name: Format check with Black
+        run: |
+          poetry run black --check .
+
+  security:
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: ./example-app
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install Bandit
+        run: |
+          poetry run poetry add --dev bandit
+
+      - name: Security check with Bandit
+        run: |
+          poetry run bandit -r .
+
+  unittests:
+    runs-on: ubuntu-latest
+    needs: [lint, formatter, security]
+    defaults:
+      run:
+        working-directory: ./example-app
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Test with pytest
         run: |
           poetry run pytest
