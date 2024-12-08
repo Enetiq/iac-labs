@@ -10,48 +10,58 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  # Job dla instalacji zależności
+  install_dependencies:
     runs-on: ubuntu-latest
-
-    # Domyślny katalog roboczy - za każdym razem przechodzimy do katalogu example-app
-    defaults:
-      run:
-        working-directory: ./example-app  # Zmieniamy katalog roboczy na example-app
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+      
+      # Instalacja Poetry
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.3.4
+        with:
+          version: 'latest'
+      
+      # Instalacja zależności
+      - name: Install dependencies with Poetry
+        run: |
+          poetry install --no-root
 
-    # Setup Python
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
+  # Job dla testów statycznych
+  static_analysis:
+    runs-on: ubuntu-latest
+    needs: install_dependencies  # Ten job czeka na zakończenie jobu install_dependencies
+    steps:
+      - uses: actions/checkout@v4
 
-    # Install Poetry
-    - name: Install Poetry
-      uses: snok/install-poetry@v1.3.4
-      with:
-        version: 'latest'  # Możesz określić wersję np. '1.3.4' lub 'latest'
-        virtualenvs-create: true  # Utwórz wirtualne środowisko
-        virtualenvs-in-project: false  # Środowisko nie będzie w projekcie
-        virtualenvs-path: '~/.cache/pypoetry/virtualenvs'  # Ścieżka do wirtualnych środowisk
-        installer-parallel: true  # Instalacja równoległa
-        installation-arguments: '--no-cache-dir'  # Argument do instalacji bez użycia cache
+      # Linter
+      - name: Lint with flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    # Install dependencies with Poetry (instaluje z pyproject.toml)
-    - name: Install dependencies with Poetry
-      run: |
-        poetry install --no-root
+      # Formatter
+      - name: Format with black
+        run: |
+          black --check .  # Sprawdza, czy kod jest zgodny z formatowaniem
 
-    # Lint with flake8
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      # Security checks with bandit
+      - name: Security checks with bandit
+        run: |
+          bandit -r ./example-app  # Uruchamia testy bezpieczeństwa w katalogu example-app
 
-    # Test with pytest
-    - name: Test with pytest
-      run: |
-        poetry run pytest  # Uruchamia testy za pomocą Poetry
+  # Job dla testów jednostkowych
+  unit_tests:
+    runs-on: ubuntu-latest
+    needs: install_dependencies  # Ten job również czeka na zakończenie install_dependencies
+    steps:
+      - uses: actions/checkout@v4
+
+      # Testowanie za pomocą pytest
+      - name: Test with pytest
+        run: |
+          poetry run pytest  # Uruchamia testy jednostkowe z wykorzystaniem Poetry
