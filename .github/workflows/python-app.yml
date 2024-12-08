@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job 1: Instalacja i budowanie środowiska
+  # Job 1: Build
   build:
     runs-on: ubuntu-latest
     concurrency:
@@ -50,9 +50,52 @@ jobs:
         run: |
           poetry install --no-root
 
-  # Job 2: Testowanie
-  test:
+  # Job 2: Lint, Formatter, Security
+  lint_format_security:
     needs: build  # Ten job nie uruchomi się bez zakończenia 'build'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: lint-format-security-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout code
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.3.4
+        with:
+          version: "latest"
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies with Poetry
+        run: |
+          poetry install --no-root
+
+      # Linting with flake8
+      - name: Lint with flake8
+        run: |
+          poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      # Formatting with black
+      - name: Format with black
+        run: |
+          poetry run black --check .
+
+      # Security checks with bandit
+      - name: Run bandit security checks
+        run: |
+          poetry run bandit -r .
+
+  # Job 3: Unit Tests
+  test:
+    needs: lint_format_security  # Ten job nie uruchomi się bez zakończenia 'lint_format_security'
     runs-on: ubuntu-latest
     concurrency:
       group: test-${{ github.ref }}
@@ -78,23 +121,7 @@ jobs:
         run: |
           poetry install --no-root
 
-      - name: Run tests with pytest
+      # Run tests with pytest
+      - name: Run unit tests with pytest
         run: |
           poetry run pytest
-
-  # Job 3: Deploy
-  deploy:
-    needs: test  # Deploy nie uruchomi się bez zakończenia testów
-    runs-on: ubuntu-latest
-    concurrency:
-      group: deploy-${{ github.ref }}
-      cancel-in-progress: true
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy application
-        run: |
-          echo "Deploying the application..."
-
