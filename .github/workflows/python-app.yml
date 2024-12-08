@@ -43,11 +43,16 @@ jobs:
       run: |
         poetry add --dev flake8
 
+    # Make sure flake8 is available and check its version
+    - name: Check flake8 version
+      run: |
+        poetry run flake8 --version  # To verify that flake8 is properly installed
+
     # Lint with flake8
     - name: Lint with flake8
       run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     # Test with pytest
     - name: Test with pytest
