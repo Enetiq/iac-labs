@@ -57,7 +57,7 @@ jobs:
         with:
           version: "latest"
 
-      - name: Install flake8
+      - name: Install linting tools
         run: |
           poetry add --dev flake8
 
@@ -85,7 +85,7 @@ jobs:
         with:
           version: "latest"
 
-      - name: Install Black
+      - name: Install formatter tools
         run: |
           poetry add --dev black
 
@@ -112,7 +112,7 @@ jobs:
         with:
           version: "latest"
 
-      - name: Install Bandit
+      - name: Install security tools
         run: |
           poetry add --dev bandit
 
