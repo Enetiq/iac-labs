@@ -50,12 +50,12 @@ jobs:
         run: |
           poetry install --no-root
 
-  # Job 2: Lint
-  lint:
+  # Job 2: Lint, Formatter, and Security (Quality checks)
+  quality-checks:
     needs: build  # Ensure this runs after 'build'
     runs-on: ubuntu-latest
     concurrency:
-      group: lint-${{ github.ref }}
+      group: quality-checks-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
@@ -67,6 +67,7 @@ jobs:
         with:
           python-version: "3.9"
 
+      # Lint Step
       - name: Install flake8
         run: |
           poetry add --dev flake8
@@ -75,23 +76,7 @@ jobs:
         run: |
           poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
-  # Job 3: Formatter (runs after lint)
-  formatter:
-    needs: lint  # Ensure this runs after 'lint'
-    runs-on: ubuntu-latest
-    concurrency:
-      group: formatter-${{ github.ref }}
-      cancel-in-progress: true
-
-    steps:
-      - uses: actions/checkout@v4
-        name: Checkout code
-
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.9"
-
+      # Formatter Step
       - name: Install black
         run: |
           poetry add --dev black
@@ -100,23 +85,7 @@ jobs:
         run: |
           poetry run black . --check
 
-  # Job 4: Security (runs after formatter)
-  security:
-    needs: formatter  # Ensure this runs after 'formatter'
-    runs-on: ubuntu-latest
-    concurrency:
-      group: security-${{ github.ref }}
-      cancel-in-progress: true
-
-    steps:
-      - uses: actions/checkout@v4
-        name: Checkout code
-
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.9"
-
+      # Security Step
       - name: Install safety
         run: |
           poetry add --dev safety
@@ -125,9 +94,9 @@ jobs:
         run: |
           poetry run safety check
 
-  # Job 5: Unit Tests (runs after build, lint, formatter, and security)
+  # Job 3: Unit Tests
   unit_tests:
-    needs: [build, lint, formatter, security]  # Ensure this runs after all the previous jobs
+    needs: quality-checks  # Ensure this runs after 'quality-checks'
     runs-on: ubuntu-latest
     concurrency:
       group: unittests-${{ github.ref }}
