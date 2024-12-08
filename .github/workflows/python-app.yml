@@ -1,4 +1,4 @@
-name: Python Application with Poetry
+name: Python application
 
 on:
   push:
@@ -15,43 +15,46 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./example-app  # Określamy katalog roboczy
+        working-directory: ./example-app  # Określamy katalog roboczy jako example-app
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.10
+    - uses: actions/checkout@v4  # Pobranie repozytorium
+    - name: Set up Python 3.11
       uses: actions/setup-python@v3
       with:
-        python-version: "3.10"
+        python-version: "3.11"  # Zgodność z wymaganiami projektu (np. ^3.11)
 
+    # Instalacja Poetry
     - name: Install Poetry
       uses: snok/install-poetry@v1.3.4
       with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
+        version: "latest"
+        virtualenvs-create: true  # Tworzenie środowiska wirtualnego
+        virtualenvs-in-project: true  # Tworzenie środowiska w projekcie
+        virtualenvs-path: ".venv"  # Ścieżka dla środowiska w projekcie
 
+    # Instalacja zależności z pliku pyproject.toml
     - name: Install dependencies
       run: |
-        poetry install
+        poetry install  # Instalacja zależności z pyproject.toml
 
+    # Testy statyczne (Linter)
     - name: Lint with flake8
       run: |
         poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Security check with Bandit
+    # Testy formatowania (Black)
+    - name: Format with black
       run: |
-        poetry add --dev bandit
-        poetry run bandit -r .
+        poetry run black --check .  # Sprawdzenie formatowania kodu
 
-    - name: Format check with Black
+    # Testy bezpieczeństwa (Bandit)
+    - name: Security check with bandit
       run: |
-        poetry add --dev black
-        poetry run black --check .
+        poetry run bandit -r .  # Sprawdzenie bezpieczeństwa kodu
 
+    # Testy jednostkowe
     - name: Test with pytest
       run: |
-        poetry run pytest
+        poetry run pytest  # Uruchomienie testów jednostkowych
