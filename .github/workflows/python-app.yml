@@ -1,10 +1,10 @@
-name: Python application
+name: Python Application with Poetry
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -13,15 +13,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./example-app  # Określamy katalog roboczy
+
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
 
-    # Install Poetry
     - name: Install Poetry
       uses: snok/install-poetry@v1.3.4
       with:
@@ -29,20 +33,25 @@ jobs:
         virtualenvs-create: true
         virtualenvs-in-project: true
 
-    # Install dependencies using Poetry
     - name: Install dependencies
       run: |
         poetry install
 
-    # Lint with flake8
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
         poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    # Test with pytest
+    - name: Security check with Bandit
+      run: |
+        poetry add --dev bandit
+        poetry run bandit -r .
+
+    - name: Format check with Black
+      run: |
+        poetry add --dev black
+        poetry run black --check .
+
     - name: Test with pytest
       run: |
         poetry run pytest
