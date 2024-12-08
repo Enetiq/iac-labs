@@ -38,6 +38,11 @@ jobs:
       run: |
         poetry install --no-root
 
+    # Install flake8 as a dev dependency
+    - name: Install flake8
+      run: |
+        poetry add --dev flake8
+
     # Lint with flake8
     - name: Lint with flake8
       run: |
