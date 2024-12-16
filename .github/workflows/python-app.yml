@@ -37,11 +37,6 @@ jobs:
         run: |
           poetry install --no-interaction --no-root
 
-      # Weryfikacja instalacji Poetry
-      - name: Verify Poetry installation
-        run: |
-          poetry --version || echo "Poetry not found"
-
   lint:
     runs-on: ubuntu-latest
     needs: build
@@ -52,15 +47,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Restore Poetry Cache
-      - name: Restore Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ./example-app/.venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
-
-      # Instalacja zależności
-      - name: Install dependencies (if cache is missing)
+      # Instalacja zależności, jeśli cache jest puste
+      - name: Install dependencies
         run: |
           poetry install --no-interaction --no-root
 
@@ -79,15 +67,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Restore Poetry Cache
-      - name: Restore Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ./example-app/.venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
-
-      # Instalacja zależności
-      - name: Install dependencies (if cache is missing)
+      # Instalacja zależności, jeśli cache jest puste
+      - name: Install dependencies
         run: |
           poetry install --no-interaction --no-root
 
@@ -106,15 +87,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Restore Poetry Cache
-      - name: Restore Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ./example-app/.venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
-
-      # Instalacja zależności
-      - name: Install dependencies (if cache is missing)
+      # Instalacja zależności, jeśli cache jest puste
+      - name: Install dependencies
         run: |
           poetry install --no-interaction --no-root
 
@@ -133,15 +107,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Restore Poetry Cache
-      - name: Restore Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ./example-app/.venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
-
-      # Instalacja zależności
-      - name: Install dependencies (if cache is missing)
+      # Instalacja zależności, jeśli cache jest puste
+      - name: Install dependencies
         run: |
           poetry install --no-interaction --no-root
 
