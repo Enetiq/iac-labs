@@ -12,49 +12,110 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     defaults:
       run:
-        working-directory: ./example-app  # Określamy katalog roboczy jako example-app
+        working-directory: ./example-app
 
     steps:
-    - uses: actions/checkout@v4  # Pobranie repozytorium
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.11"  # Zgodność z wymaganiami projektu (np. ^3.11)
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # Instalacja Poetry
-    - name: Install Poetry
-      uses: snok/install-poetry@v1.3.4
-      with:
-        version: "latest"
-        virtualenvs-create: true  # Tworzenie środowiska wirtualnego
-        virtualenvs-in-project: true  # Tworzenie środowiska w projekcie
-        virtualenvs-path: ".venv"  # Ścieżka dla środowiska w projekcie
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    # Instalacja zależności z pliku pyproject.toml
-    - name: Install dependencies
-      run: |
-        poetry install  # Instalacja zależności z pyproject.toml
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.3.4
+        with:
+          version: "latest"
+          virtualenvs-create: true
+          virtualenvs-in-project: true
 
-    # Testy statyczne (Linter)
-    - name: Lint with flake8
-      run: |
-        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Cache Poetry dependencies
+        id: cache-poetry
+        uses: actions/cache@v3
+        with:
+          path: ./example-app/.venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
 
-    # Testy formatowania (Black)
-    - name: Format with black
-      run: |
-        poetry run black --check .  # Sprawdzenie formatowania kodu
+      - name: Install dependencies
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
 
-    # Testy bezpieczeństwa (Bandit)
-    - name: Security check with bandit
-      run: |
-        poetry run bandit -r .  # Sprawdzenie bezpieczeństwa kodu
+  lint:
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: ./example-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # Testy jednostkowe
-    - name: Test with pytest
-      run: |
-        poetry run pytest  # Uruchomienie testów jednostkowych
+      - name: Restore Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ./example-app/.venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
+
+      - name: Run linter (flake8)
+        run: |
+          poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  formatter:
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: ./example-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ./example-app/.venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
+
+      - name: Check code format with black
+        run: poetry run black --check .
+
+  security:
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: ./example-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ./example-app/.venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
+
+      - name: Run Bandit security checks
+        run: poetry run bandit -r .
+
+  unittests:
+    runs-on: ubuntu-latest
+    needs: [lint, formatter, security]
+    defaults:
+      run:
+        working-directory: ./example-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ./example-app/.venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
+
+      - name: Run pytest
+        run: poetry run pytest
