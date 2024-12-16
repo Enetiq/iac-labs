@@ -51,7 +51,6 @@ jobs:
         run: |
           poetry run pytest
 
-
   lint:
     runs-on: ubuntu-latest
     needs: build
@@ -62,16 +61,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Przywrócenie pamięci podręcznej Poetry
       - name: Restore Poetry Cache
         uses: actions/cache@v3
         with:
           path: ./example-app/.venv
           key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
 
+      # Instalacja zależności (jeśli pamięć podręczna jest pusta)
       - name: Install dependencies (if cache is missing)
         run: |
           poetry install --no-interaction --no-root
 
+      # Uruchomienie lintera (flake8)
       - name: Run linter (flake8)
         run: |
           poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -86,16 +88,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Przywrócenie pamięci podręcznej Poetry
       - name: Restore Poetry Cache
         uses: actions/cache@v3
         with:
           path: ./example-app/.venv
           key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
 
+      # Instalacja zależności (jeśli pamięć podręczna jest pusta)
       - name: Install dependencies (if cache is missing)
         run: |
           poetry install --no-interaction --no-root
 
+      # Sprawdzenie formatowania kodu z Black
       - name: Check code format with black
         run: |
           poetry run black --check .
@@ -110,20 +115,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Przywrócenie pamięci podręcznej Poetry
       - name: Restore Poetry Cache
         uses: actions/cache@v3
         with:
           path: ./example-app/.venv
           key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
 
+      # Instalacja zależności (jeśli pamięć podręczna jest pusta)
       - name: Install dependencies (if cache is missing)
         run: |
           poetry install --no-interaction --no-root
 
+      # Uruchomienie testów bezpieczeństwa (Bandit)
       - name: Run Bandit security checks
         run: |
           poetry run bandit -r .
-          
+
   unittests:
     runs-on: ubuntu-latest
     needs: [lint, formatter, security]
@@ -134,11 +142,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Przywrócenie pamięci podręcznej Poetry
       - name: Restore Poetry Cache
         uses: actions/cache@v3
         with:
           path: ./example-app/.venv
           key: ${{ runner.os }}-poetry-${{ hashFiles('./example-app/poetry.lock') }}
 
+      # Instalacja zależności (jeśli pamięć podręczna jest pusta)
+      - name: Install dependencies (if cache is missing)
+        run: |
+          poetry install --no-interaction --no-root
+
+      # Uruchomienie testów jednostkowych (pytest)
       - name: Run pytest
-        run: poetry run pytest
+        run: |
+          poetry run pytest
