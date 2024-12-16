@@ -24,17 +24,22 @@ jobs:
         with:
           python-version: "3.11"
 
-      # Instalacja Poetry ręcznie za pomocą pip
+      # Instalacja Poetry ręcznie
       - name: Install Poetry
         run: |
-          pip install --upgrade pip
-          pip install poetry
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          echo "Ścieżka do pip-installed poetry:"
+          python -m site --user-base  # Logowanie bazy user-site
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "PATH=$PATH"
 
       # Weryfikacja instalacji Poetry
       - name: Verify Poetry installation
         run: |
-          poetry --version
+          which poetry || echo "Poetry not found"
+          poetry --version || echo "Error running poetry"
 
       # Instalacja zależności
       - name: Install dependencies
@@ -45,7 +50,6 @@ jobs:
       - name: Run pytest
         run: |
           poetry run pytest
-
 
 
   lint:
