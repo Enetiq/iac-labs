@@ -14,9 +14,11 @@ jobs:
         working-directory: ./example-app
 
     steps:
+      # Pobranie repozytorium
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Instalacja Poetry
       - name: Install Poetry
         uses: snok/install-poetry@v1.3.4
         with:
@@ -25,21 +27,26 @@ jobs:
           virtualenvs-in-project: true
           virtualenvs-path: ".venv"
 
+      # Dodanie ścieżki do Poetry
       - name: Add Poetry to PATH
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      # Weryfikacja instalacji Poetry
       - name: Verify Poetry installation
         run: |
           poetry --version
 
+      # Instalacja zależności
       - name: Install dependencies
         run: |
           poetry install --no-interaction --no-root
 
-      - name: Run tests
+      # Testy jednostkowe
+      - name: Run pytest
         run: |
           poetry run pytest
+
 
 
   lint:
