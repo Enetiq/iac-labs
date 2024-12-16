@@ -29,17 +29,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install poetry
-          echo "Ścieżka do pip-installed poetry:"
-          python -m site --user-base  # Logowanie bazy user-site
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "Poetry zainstalowane w ścieżce:"
+          python -m site --user-base  # Sprawdzenie ścieżki instalacji poetry
+          echo "$HOME/.local/bin" >> $GITHUB_PATH  # Dodanie ścieżki do PATH
           export PATH="$HOME/.local/bin:$PATH"
-          echo "PATH=$PATH"
+          echo "Ścieżka PATH: $PATH"  # Sprawdzenie, czy ścieżka jest dodana poprawnie
 
       # Weryfikacja instalacji Poetry
       - name: Verify Poetry installation
         run: |
-          which poetry || echo "Poetry not found"
-          poetry --version || echo "Error running poetry"
+          which poetry || echo "Poetry nie znaleziono"
+          poetry --version || echo "Błąd podczas uruchamiania poetry"
 
       # Instalacja zależności
       - name: Install dependencies
@@ -158,3 +158,4 @@ jobs:
       - name: Run pytest
         run: |
           poetry run pytest
+
