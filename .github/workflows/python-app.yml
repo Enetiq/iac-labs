@@ -1,14 +1,4 @@
 name: Python application
-name: Install Poetry Action
-uses: snok/install-poetry@v1.3.4
-with:
-  version: # Możesz podać konkretna wersję, np. 1.1.14, jeśli potrzebna
-  virtualenvs-create: true  # Tworzenie środowiska wirtualnego
-  virtualenvs-in-project: true  # Tworzenie środowiska w katalogu projektu
-  virtualenvs-path:  # Opcjonalnie, ścieżka do środowiska wirtualnego, default to {cache-dir}/virtualenvs
-  installer-parallel: true  # Instalowanie wielu pakietów jednocześnie
-  installation-arguments:  # Opcjonalne argumenty dla instalacji, np. --force
-
 
 on:
   push:
@@ -18,26 +8,33 @@ on:
 
 permissions:
   contents: read
-jobs:
-  some-name:
 
-    runs-on: some-os
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
 
     defaults:
       run:
         working-directory: ./example-app
-        
+
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
+    - name: Install Poetry Action
+      uses: snok/install-poetry@v1.3.4
+      with:
+        version: latest  # Możesz podać konkretną wersję, np. 1.1.14, jeśli potrzebna
+        virtualenvs-create: true  # Tworzenie środowiska wirtualnego
+        virtualenvs-in-project: true  # Tworzenie środowiska w katalogu projektu
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        poetry install  # Instalacja wszystkich zależności używając Poetry
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
