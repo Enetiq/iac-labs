@@ -16,7 +16,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./example-app
+        working-directory: ./example-app  # Bezpośredni dostęp do katalogu projektu
 
     steps:
     # Checkout the repository
@@ -40,7 +40,7 @@ jobs:
     # Install dependencies using Poetry
     - name: Install dependencies
       run: |
-        poetry install
+        poetry install --with dev
 
     # Lint code using flake8
     - name: Lint with flake8
