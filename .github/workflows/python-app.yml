@@ -38,7 +38,7 @@ jobs:
       run: |
         poetry install --no-root
 
-  # Grupa 2: Static Tests (Linter, Formatter, Security)
+  # Grupa 2: Static Tests
   static-tests:
     needs: dependency-build
     runs-on: ubuntu-latest
