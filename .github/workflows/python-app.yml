@@ -14,11 +14,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job 1: Dependency Build
+  # Job: Dependency Build on multiple OS
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     defaults:
       run:
+        shell: bash
         working-directory: ./example-app
     steps:
     - uses: actions/checkout@v4
@@ -140,4 +144,3 @@ jobs:
         key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
     - name: Run tests with pytest
       run: poetry run pytest || true
-
