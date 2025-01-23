@@ -9,8 +9,12 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: python-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # Grupa 1: Dependency Build
+  # Job 1: Dependency Build
   dependency-build:
     runs-on: ubuntu-latest
     defaults:
@@ -28,17 +32,16 @@ jobs:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
-    - name: Cache dependencies
+    - name: Cache Poetry dependencies
       id: cached-poetry-dependencies
       uses: actions/cache@v3
       with:
-        path: /home/runner/work/example-app/.venv
-        key: ${{ runner.os }}-venv
+        path: ./example-app/.venv
+        key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
     - name: Install dependencies
-      run: |
-        poetry install --no-root
+      run: poetry install --no-root
 
-  # Grupa 2: Static Tests
+  # Job 2: Static Tests
   static-tests:
     needs: dependency-build
     runs-on: ubuntu-latest
@@ -51,19 +54,21 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-    - name: Restore cache
+    - name: Restore Poetry dependencies from cache
       uses: actions/cache@v3
       with:
-        path: /home/runner/work/example-app/.venv
-        key: ${{ runner.os }}-venv
+        path: ./example-app/.venv
+        key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
     - name: Lint with flake8
       run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Security analysis with Bandit
+      run: poetry run bandit -r .
 
-  # Grupa 3: Unit Tests
+  # Job 3: Unit Tests
   unit-tests:
-    needs: static-tests
+    needs: dependency-build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -74,11 +79,10 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-    - name: Restore cache
+    - name: Restore Poetry dependencies from cache
       uses: actions/cache@v3
       with:
-        path: /home/runner/work/example-app/.venv
-        key: ${{ runner.os }}-venv
-    - name: Test with pytest
-      run: |
-        pytest
+        path: ./example-app/.venv
+        key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
+    - name: Run tests with pytest
+      run: poetry run pytest
