@@ -64,7 +64,7 @@ jobs:
         path: ./example-app/.venv
         key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
     - name: Lint with flake8
-      run: poetry run flake8 ./example-app --count --select=E9,F63,F7,F82 --show-source --statistics
+      run: poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
   # Job 3: Format check with Black
   formatter:
