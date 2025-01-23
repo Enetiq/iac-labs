@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   # Job 1: Dependency Build
-  dependency-build:
+  build:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,9 +41,9 @@ jobs:
     - name: Install dependencies
       run: poetry install --no-root
 
-  # Job 2: Static Tests
-  static-tests:
-    needs: dependency-build
+  # Job 2: Static Tests (Parallel Lint, Formatter, Security)
+  lint:
+    needs: build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,15 +60,51 @@ jobs:
         path: ./example-app/.venv
         key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
     - name: Lint with flake8
-      run: |
-        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      run: poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  formatter:
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./example-app
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Restore Poetry dependencies from cache
+      uses: actions/cache@v3
+      with:
+        path: ./example-app/.venv
+        key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
+    - name: Check formatting with Black
+      run: poetry run black --check .
+
+  security:
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./example-app
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Restore Poetry dependencies from cache
+      uses: actions/cache@v3
+      with:
+        path: ./example-app/.venv
+        key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
     - name: Security analysis with Bandit
       run: poetry run bandit -r .
 
   # Job 3: Unit Tests
-  unit-tests:
-    needs: dependency-build
+  unittests:
+    needs: [lint, formatter, security]
     runs-on: ubuntu-latest
     defaults:
       run:
